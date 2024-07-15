@@ -21,7 +21,7 @@
 const props = defineProps<{
 	name: string;
 	duration: number;
-	thumb: string;
+	thumb: string | null;
 }>();
 </script>
 
@@ -66,6 +66,7 @@ const props = defineProps<{
 .name {
 	font-weight: 500;
 	margin: 15px 30px;
+	user-select: none;
 }
 
 img {
