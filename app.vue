@@ -1,53 +1,37 @@
 <template>
 	<div class="container">
 		<div class="search">
-			<input type="text" class="path" v-model="locationPath" @keypress="searchKeypress" />
+			<input
+				type="text"
+				class="path"
+				v-model="locationPath"
+				@keypress="searchKeypress"
+				placeholder="Enter path to open another folder"
+			/>
 		</div>
-		<div class="directory-browser">
-			<Video
-				v-for="item in files"
-				:key="item.name"
-				:name="item.name"
-				:duration="item.duration"
-				:thumb="item.thumb"
-				@click="() => handleFileClick(item)"
-			></Video>
-		</div>
+
+		<NuxtPage />
 	</div>
 </template>
 
 <script setup>
 import NProgress from "nprogress";
 
-NProgress.start();
-const files = ref(await window.ipc.getFiles());
+const router = useRouter();
 const locationPath = ref("");
 
 onMounted(async () => {
 	const path = localStorage.getItem("path");
 	if (path) {
-		files.value = await window.ipc.getFiles(path);
 		locationPath.value = path;
 	}
-	NProgress.done();
 });
-
-const handleFileClick = async (item) => {
-	NProgress.start();
-	if (item.path) {
-		files.value = await window.ipc.getFiles(item.path);
-		localStorage.setItem("path", item.path);
-		locationPath.value = item.path;
-		NProgress.done();
-	}
-};
 
 const searchKeypress = async (e) => {
 	if (e.key === "Enter") {
 		NProgress.start();
-		files.value = await window.ipc.getFiles(locationPath.value);
 		localStorage.setItem("path", locationPath.value);
-		NProgress.done();
+		router.push("/");
 	}
 };
 </script>
@@ -75,20 +59,6 @@ body {
 	margin: 20px 0;
 }
 
-.back {
-	background: #f0f0f0;
-	border: none;
-	border-radius: 5px;
-	padding: 10px 20px;
-	margin-right: 10px;
-	cursor: pointer;
-	transition: all 0.3s;
-}
-
-.back:hover {
-	background: #e0e0e0;
-}
-
 .path {
 	background: #f0f0f0;
 	border: none;
@@ -102,12 +72,5 @@ body {
 
 .path:focus {
 	border-color: #d0d0d0;
-}
-
-.directory-browser {
-	display: flex;
-	flex-direction: row;
-	flex-wrap: wrap;
-	justify-content: center;
 }
 </style>
