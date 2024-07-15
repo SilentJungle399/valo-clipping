@@ -8,7 +8,7 @@
 				/>
 			</svg>
 			<span v-if="thumb" class="duration">
-				{{ Math.floor(duration / 60) }}:{{ String(duration % 60).padStart(2, "0") }}
+				{{ formatSeconds(duration) }}
 			</span>
 		</div>
 		<span class="name" :title="name">{{
@@ -23,6 +23,16 @@ const props = defineProps<{
 	duration: number;
 	thumb: string | null;
 }>();
+
+const formatSeconds = (sec: number) => {
+	const hours = Math.floor(sec / 3600);
+	const minutes = Math.floor((sec % 3600) / 60);
+	const seconds = sec % 60;
+	return (
+		(hours ? `${hours}:` : "") +
+		`${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+	);
+};
 </script>
 
 <style scoped>
