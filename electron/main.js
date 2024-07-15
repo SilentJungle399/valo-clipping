@@ -42,16 +42,18 @@ ipcMain.handle("getFiles", async (ev, loc = process.env.USERPROFILE + "/Videos")
 					data.thumb = stream.read().toString("base64");
 					retfiles.push(data);
 				})
-				.pipe(stream, { end: true }); // -vframes 1
+				.pipe(stream, { end: true });
 
 			ffmpeg.ffprobe(loc + "/" + file, function (err, metadata) {
 				data.duration = Math.floor(metadata.format.duration);
+				data.createdAt = metadata.format.tags.creation_time;
 			});
 		} else if (lstatSync(loc + "/" + file).isDirectory()) {
 			retfiles.push({
 				name: file,
 				thumb: null,
 				duration: 0,
+				path: loc + "/" + file,
 			});
 			numFiles++;
 		}
