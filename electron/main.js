@@ -1,9 +1,9 @@
 import { app, BrowserWindow, ipcMain } from "electron";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
-import { promises } from "fs";
 import ffmpeg from "fluent-ffmpeg";
+import { promises, lstatSync } from "fs";
+import { dirname, join } from "path";
 import { PassThrough } from "stream";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -14,20 +14,20 @@ const createWindow = () => {
 		height: 600,
 		webPreferences: {
 			preload: join(__dirname, "preload.cjs"),
-			contextIsolation: true,
-			nodeIntegration: false,
-			sandbox: false,
-			allowRunningInsecureContent: true,
 		},
 	});
 
+	mainWindow.maximize();
+
 	mainWindow.loadURL("http://localhost:3000");
+	mainWindow.webContents.openDevTools();
 };
 
 ipcMain.handle("getFiles", async (ev, loc = process.env.USERPROFILE + "/Videos") => {
 	const retfiles = [];
 
 	const files = await promises.readdir(loc);
+	let numFiles = files.filter((file) => file.endsWith(".mp4") || file.endsWith(".mkv")).length;
 
 	files.forEach((file, i) => {
 		if (file.endsWith(".mp4") || file.endsWith(".mkv")) {
@@ -45,19 +45,20 @@ ipcMain.handle("getFiles", async (ev, loc = process.env.USERPROFILE + "/Videos")
 				.pipe(stream, { end: true }); // -vframes 1
 
 			ffmpeg.ffprobe(loc + "/" + file, function (err, metadata) {
-				data.duration = metadata.format.duration;
+				data.duration = Math.floor(metadata.format.duration);
 			});
-		} else {
+		} else if (lstatSync(loc + "/" + file).isDirectory()) {
 			retfiles.push({
 				name: file,
-				thumb: "",
+				thumb: null,
 				duration: 0,
 			});
+			numFiles++;
 		}
 	});
 
 	// wait for all files to be processed
-	while (retfiles.length < files.length) {
+	while (retfiles.length < numFiles) {
 		await new Promise((resolve) => setTimeout(resolve, 100));
 	}
 
