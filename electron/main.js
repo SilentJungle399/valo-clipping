@@ -14,6 +14,7 @@ const createWindow = () => {
 		height: 600,
 		webPreferences: {
 			preload: join(__dirname, "preload.cjs"),
+			webSecurity: false
 		},
 	});
 
