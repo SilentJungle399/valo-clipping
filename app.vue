@@ -1,8 +1,7 @@
 <template>
 	<div class="container">
 		<div class="search">
-			<button class="back" @click="goBack">Back</button>
-			<input type="text" class="path" v-model="locationPath" />
+			<input type="text" class="path" v-model="locationPath" @keypress="searchKeypress" />
 		</div>
 		<div class="directory-browser">
 			<Video
@@ -43,14 +42,11 @@ const handleFileClick = async (item) => {
 	}
 };
 
-const goBack = async () => {
-	NProgress.start();
-	const path = localStorage.getItem("path");
-	if (path) {
-		const newPath = path.split("/").slice(0, -1).join("/");
-		files.value = await window.ipc.getFiles(newPath);
-		localStorage.setItem("path", newPath);
-		locationPath.value = newPath;
+const searchKeypress = async (e) => {
+	if (e.key === "Enter") {
+		NProgress.start();
+		files.value = await window.ipc.getFiles(locationPath.value);
+		localStorage.setItem("path", locationPath.value);
 		NProgress.done();
 	}
 };
@@ -101,6 +97,7 @@ body {
 	outline: none;
 	transition: all 0.3s;
 	border: 1px solid #f0f0f0;
+	width: 600px;
 }
 
 .path:focus {
