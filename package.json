@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "nuxt": "^3.12.3",
-    "socket.io-client": "^4.7.5",
     "vue": "latest"
   }
 }
