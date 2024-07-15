@@ -35,18 +35,23 @@ ipcMain.handle("getFiles", async (ev, loc = process.env.USERPROFILE + "/Videos")
 				name: file,
 			};
 			const stream = new PassThrough();
-			ffmpeg(loc + "/" + file)
-				.format("mjpeg")
-				.frames(1)
-				.on("end", function () {
-					data.thumb = stream.read().toString("base64");
-					retfiles.push(data);
-				})
-				.pipe(stream, { end: true });
+			try {
+				ffmpeg(loc + "/" + file)
+					.format("mjpeg")
+					.frames(1)
+					.on("end", function () {
+						data.thumb = stream.read().toString("base64");
+						retfiles.push(data);
+					})
+					.pipe(stream, { end: true });
+			} catch (err) {
+				console.error(err);
+			}
 
 			ffmpeg.ffprobe(loc + "/" + file, function (err, metadata) {
 				data.duration = Math.floor(metadata.format.duration);
 				data.createdAt = metadata.format.tags.creation_time;
+				data.thumb = data.thumb ?? null;
 			});
 		} else if (lstatSync(loc + "/" + file).isDirectory()) {
 			retfiles.push({
