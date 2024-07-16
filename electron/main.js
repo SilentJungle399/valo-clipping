@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import ffmpeg from "fluent-ffmpeg";
-import { promises, lstatSync } from "fs";
+import { promises, lstatSync, readFileSync } from "fs";
 import { dirname, join } from "path";
 import { PassThrough } from "stream";
 import { fileURLToPath } from "url";
@@ -14,7 +14,7 @@ const createWindow = () => {
 		height: 600,
 		webPreferences: {
 			preload: join(__dirname, "preload.cjs"),
-			webSecurity: false
+			webSecurity: false,
 		},
 	});
 
@@ -71,6 +71,22 @@ ipcMain.handle("getFiles", async (ev, loc = process.env.USERPROFILE + "/Videos")
 	}
 
 	return retfiles;
+});
+
+ipcMain.handle("getMetadata", async (ev, id) => {
+	const ret = {};
+	ret.kills = JSON.parse(
+		readFileSync(new URL("file://" + id.slice(0, -4) + ".json", import.meta.url))
+	);
+	ffmpeg.ffprobe(id, function (err, metadata) {
+		ret.meta = metadata;
+	});
+
+	while (!ret.meta) {
+		await new Promise((resolve) => setTimeout(resolve, 100));
+	}
+
+	return ret;
 });
 
 app.whenReady().then(() => {
