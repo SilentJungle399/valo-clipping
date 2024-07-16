@@ -25,6 +25,13 @@ onMounted(async () => {
 	if (path) {
 		locationPath.value = path;
 	}
+
+	document.addEventListener("keypress", (e) => {
+		if (e.key === "r" && e.ctrlKey) {
+			NProgress.start();
+			router.push("/");
+		}
+	});
 });
 
 const searchKeypress = async (e) => {
@@ -67,7 +74,7 @@ body {
 	outline: none;
 	transition: all 0.3s;
 	border: 1px solid #f0f0f0;
-	width: 600px;
+	max-width: 600px;
 }
 
 .path:focus {
