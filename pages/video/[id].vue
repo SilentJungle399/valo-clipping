@@ -22,15 +22,11 @@ onMounted(async () => {
 	const fps = videoStream.r_frame_rate.split("/")[0] / videoStream.r_frame_rate.split("/")[1];
 
 	document.addEventListener("keydown", (e) => {
-		console.log(e.target.tagName);
-		if (e.key === "ArrowLeft") {
-			if (e.target.tagName === "VIDEO") return;
+		if (e.key === "ArrowLeft" && e.target.tagName !== "VIDEO") {
 			video.value.currentTime -= e.ctrl ? 1 : 5;
-		} else if (e.key === "ArrowRight") {
-			if (e.target.tagName === "VIDEO") return;
+		} else if (e.key === "ArrowRight" && e.target.tagName !== "VIDEO") {
 			video.value.currentTime += e.ctrl ? 1 : 5;
-		} else if (e.key === " ") {
-			if (e.target.tagName === "VIDEO") return;
+		} else if (e.key === " " && e.target.tagName !== "VIDEO") {
 			video.value.paused ? video.value.play() : video.value.pause();
 		} else if (e.key === ".") {
 			video.value.currentTime += 1 / fps;
