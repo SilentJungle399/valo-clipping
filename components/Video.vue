@@ -64,11 +64,11 @@ const formatSeconds = (sec: number) => {
 
 .duration {
 	position: absolute;
-	bottom: 0;
+	bottom: 5px;
 	right: 0;
 	background: rgba(0, 0, 0, 0.5);
 	color: #fff;
-	padding: 0px 5px;
+	padding: 2px 5px;
 	margin: 5px 7px;
 	border-radius: 5px;
 }
