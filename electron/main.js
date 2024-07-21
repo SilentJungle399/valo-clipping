@@ -75,9 +75,13 @@ ipcMain.handle("getFiles", async (ev, loc = process.env.USERPROFILE + "/Videos")
 
 ipcMain.handle("getMetadata", async (ev, id) => {
 	const ret = {};
-	ret.kills = JSON.parse(
-		readFileSync(new URL("file://" + id.slice(0, -4) + ".json", import.meta.url))
-	);
+	try {
+		ret.kills = JSON.parse(
+			readFileSync(new URL("file://" + id.slice(0, -4) + ".json", import.meta.url))
+		);
+	} catch (e) {
+		ret.kills = [];
+	}
 	ffmpeg.ffprobe(id, function (err, metadata) {
 		ret.meta = metadata;
 	});
