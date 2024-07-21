@@ -6,9 +6,10 @@
 <script setup>
 import NProgress from "nprogress";
 const vidSrc = ref("");
-const route = useRoute();
 const metadata = ref({});
 const video = ref(null);
+
+const route = useRoute();
 
 onMounted(async () => {
 	vidSrc.value = localStorage.getItem("path") + "/" + route.params.id;
@@ -23,9 +24,9 @@ onMounted(async () => {
 
 	document.addEventListener("keydown", (e) => {
 		if (e.key === "ArrowLeft" && e.target.tagName !== "VIDEO") {
-			video.value.currentTime -= e.ctrl ? 1 : 5;
+			video.value.currentTime -= e.ctrlKey ? 1 : 5;
 		} else if (e.key === "ArrowRight" && e.target.tagName !== "VIDEO") {
-			video.value.currentTime += e.ctrl ? 1 : 5;
+			video.value.currentTime += e.ctrlKey ? 1 : 5;
 		} else if (e.key === " " && e.target.tagName !== "VIDEO") {
 			video.value.paused ? video.value.play() : video.value.pause();
 		} else if (e.key === ".") {
