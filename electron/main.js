@@ -8,6 +8,8 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// app.commandLine.appendSwitch("enable-features", "FileSystemAccessApi");
+
 const createWindow = () => {
 	const mainWindow = new BrowserWindow({
 		width: 800,
@@ -91,6 +93,28 @@ ipcMain.handle("getMetadata", async (ev, id) => {
 	}
 
 	return ret;
+});
+
+ipcMain.handle("saveClip", async (ev, { vid, path, pos }) => {
+	let done = false;
+	ffmpeg({ source: vid })
+		.setStartTime(pos[0])
+		.setDuration(pos[1] - pos[0])
+		.on("end", (err) => {
+			console.log("done");
+			if (!err) {
+				done = true;
+			}
+		})
+		.saveToFile(path);
+
+	console.log("waiting");
+	while (!done) {
+		await new Promise((resolve) => setTimeout(resolve, 100));
+	}
+	console.log("ggs boys");
+
+	return true;
 });
 
 app.whenReady().then(() => {

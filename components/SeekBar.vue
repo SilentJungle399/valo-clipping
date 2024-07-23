@@ -41,6 +41,27 @@
 		</div>
 
 		<div class="toggle-buttons">
+			<input
+				type="text"
+				style="min-width: 40ch"
+				class="path"
+				v-if="clip[1] - clip[0]"
+				onkeypress="this.style.width = this.value.length + 'ch'"
+				v-model="saveDirectory"
+				ref="directoryInput"
+				placeholder="Enter location to clips folder"
+			/>
+			<input
+				type="text"
+				style="min-width: 25ch"
+				class="path"
+				v-if="clip[1] - clip[0]"
+				onkeypress="this.style.width = this.value.length + 'ch'"
+				v-model="saveName"
+				ref="nameInput"
+				placeholder="Enter clip name"
+			/>
+			<button class="toggle" @click="saveClip" v-if="clip[1] - clip[0]">Save clip</button>
 			<button class="toggle" @click="manageClip">
 				{{ clip[1] - clip[0] ? "Remove clip" : "Add clip" }}
 			</button>
@@ -49,6 +70,9 @@
 </template>
 
 <script setup lang="ts">
+// @ts-expect-error
+import NProgress from "nprogress";
+
 interface MetaData {
 	kills: number[][];
 	meta: any;
@@ -62,11 +86,16 @@ const seekbar = ref<HTMLDivElement>();
 const clipDiv = ref<HTMLDivElement>();
 const spaceCheck = ref<HTMLDivElement>();
 const peg = ref<HTMLDivElement>();
+const nameInput = ref<HTMLDivElement>();
+const directoryInput = ref<HTMLDivElement>();
 
 const showKillIndex = ref<number | null>(null);
 const preventDisappear = ref(false);
 const curTimeout = ref<any>(null);
 const clip = ref<number[]>([0, 0]);
+const dragging = ref<boolean>(false);
+const saveDirectory = ref("");
+const saveName = ref("");
 
 const seekVideo = (time: number) => {
 	const video = document.getElementById("video") as HTMLVideoElement;
@@ -84,6 +113,33 @@ const mouseenterEffect = (kills: number[][]) => {
 	if (curTimeout.value) clearTimeout(curTimeout.value);
 	showKillIndex.value = filteredKills.value.indexOf(kills);
 };
+
+const saveClip = async () => {
+	if (saveDirectory.value.length === 0) {
+		directoryInput.value!.style.borderColor = "red";
+		return setTimeout(() => (directoryInput.value!.style.borderColor = "#f0f0f0"), 1500);
+	}
+
+	if (saveName.value.length === 0) {
+		nameInput.value!.style.borderColor = "red";
+		return setTimeout(() => (nameInput.value!.style.borderColor = "#f0f0f0"), 1500);
+	}
+
+	NProgress.start();
+	console.time("save-clip");
+	// @ts-expect-error
+	await window.ipc.saveClip(
+		props.metadata.meta.format.filename,
+		saveDirectory.value + "/" + saveName.value + ".mp4",
+		[clip.value[0], clip.value[1]]
+	);
+	console.timeEnd("save-clip");
+	NProgress.done();
+};
+
+// const openDirectory = async () => {
+// 	const dirHandle = await window.showDirectoryPicker();
+// };
 
 const resolveBounds = (val: number, min: number, max: number) => {
 	return Math.min(Math.max(val, min), max);
@@ -116,7 +172,7 @@ const dragKeypoint = (
 		const leftPlacement = resolveBounds(initLeft + movePercent, 0, 100 - initWidth)
 		clipDiv.value!.style.left = `${leftPlacement}%`;
 		video.currentTime = leftPlacement * props.metadata.meta.format.duration / 100;
-		
+
 		clip.value = [
 			leftPlacement * props.metadata.meta.format.duration / 100,
 			(leftPlacement + initWidth) * props.metadata.meta.format.duration / 100
@@ -124,18 +180,18 @@ const dragKeypoint = (
 	}
 };
 
+// prettier-ignore
 const mouseDownPoint = (e: MouseEvent, idx: number) => {
-	console.log(e.target, idx);
 	const initLeft = parseFloat(clipDiv.value!.style.left.slice(0, -1));
 	const initWidth = parseFloat(clipDiv.value!.style.width.slice(0, -1));
 	const spaceWidth = (spaceCheck.value!.clientWidth * 100) / seekbar.value!.clientWidth;
+	dragging.value = true
 
-	const evListener = (_e: MouseEvent) =>
-		dragKeypoint(_e, idx, e.clientX, initLeft, initWidth, spaceWidth);
+	const evListener = (_e: MouseEvent) => dragKeypoint(_e, idx, e.clientX, initLeft, initWidth, spaceWidth);
 	const removeListener = (_e: MouseEvent) => {
-		console.log("up called");
 		window.removeEventListener("mousemove", evListener);
 		window.removeEventListener("mouseup", removeListener);
+		dragging.value = false
 	};
 
 	window.addEventListener("mousemove", evListener);
@@ -180,11 +236,20 @@ const manageClip = () => {
 	}
 };
 
+watch(saveDirectory, (val) => {
+	localStorage.setItem("clipsDirectory", val);
+});
+
 onMounted(() => {
 	const video = document.getElementById("video") as HTMLVideoElement;
+	saveDirectory.value = localStorage.getItem("clipsDirectory") ?? "";
 
 	video.addEventListener("timeupdate", () => {
-		if (Math.floor(video.currentTime) === Math.floor(clip.value[1])) {
+		if (
+			Math.floor(video.currentTime) === Math.floor(clip.value[1]) &&
+			!dragging.value &&
+			clip.value[1] - clip.value[0]
+		) {
 			video.currentTime = clip.value[0];
 		}
 
@@ -252,17 +317,20 @@ onMounted(() => {
 	cursor: e-resize;
 	flex-shrink: 0;
 	content: "";
-	transform: translate(0px, -5%);
+	position: absolute;
 	display: block;
+	transform: translate(0, -5%);
 }
 
 .start {
 	border-top-left-radius: 5px;
 	border-bottom-left-radius: 5px;
+	left: -7px;
 }
 .end {
 	border-top-right-radius: 5px;
 	border-bottom-right-radius: 5px;
+	right: -7px;
 }
 
 .timeline {
