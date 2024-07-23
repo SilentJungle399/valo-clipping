@@ -7,6 +7,7 @@
 				v-model="locationPath"
 				@keypress="searchKeypress"
 				placeholder="Enter path to open another folder"
+				style="min-width: 50ch"
 			/>
 		</div>
 
@@ -35,6 +36,7 @@ onMounted(async () => {
 });
 
 const searchKeypress = async (e) => {
+	e.target.style.width = `${locationPath.value.length}ch`;
 	if (e.key === "Enter") {
 		NProgress.start();
 		localStorage.setItem("path", locationPath.value);
@@ -72,9 +74,8 @@ body {
 	border-radius: 5px;
 	padding: 10px 20px;
 	outline: none;
-	transition: all 0.3s;
+	transition: all 0.1s;
 	border: 1px solid #f0f0f0;
-	max-width: 600px;
 }
 
 .path:focus {
