@@ -23,7 +23,7 @@ const createWindow = () => {
 	mainWindow.maximize();
 
 	mainWindow.loadURL("http://localhost:3000");
-	mainWindow.webContents.openDevTools();
+	// mainWindow.webContents.openDevTools();
 };
 
 ipcMain.handle("getFiles", async (ev, loc = process.env.USERPROFILE + "/Videos") => {
@@ -101,18 +101,15 @@ ipcMain.handle("saveClip", async (ev, { vid, path, pos }) => {
 		.setStartTime(pos[0])
 		.setDuration(pos[1] - pos[0])
 		.on("end", (err) => {
-			console.log("done");
 			if (!err) {
 				done = true;
 			}
 		})
 		.saveToFile(path);
 
-	console.log("waiting");
 	while (!done) {
 		await new Promise((resolve) => setTimeout(resolve, 100));
 	}
-	console.log("ggs boys");
 
 	return true;
 });
