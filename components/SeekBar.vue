@@ -20,9 +20,10 @@
 			</div>
 		</div>
 		<div class="progress">
+			<div class="peg" ref="peg"></div>
 			<div
 				class="clip"
-				v-if="clip.length === 2 && metadata.meta"
+				v-if="clip[1] - clip[0] !== 0 && metadata.meta"
 				ref="clipDiv"
 				:style="`
 					left: ${(clip[0] * 100) / metadata.meta.format.duration}%; 
@@ -39,10 +40,11 @@
 			</div>
 		</div>
 
-		<!-- <div class="toggle-buttons">
-			<button class="toggle" @click="() => (showMs = !showMs)">Show milliseconds</button>
-			<button class="toggle" @click="addClip">Add clip</button>
-		</div> -->
+		<div class="toggle-buttons">
+			<button class="toggle" @click="manageClip">
+				{{ clip[1] - clip[0] ? "Remove clip" : "Add clip" }}
+			</button>
+		</div>
 	</div>
 </template>
 
@@ -59,16 +61,12 @@ const props = defineProps<{
 const seekbar = ref<HTMLDivElement>();
 const clipDiv = ref<HTMLDivElement>();
 const spaceCheck = ref<HTMLDivElement>();
+const peg = ref<HTMLDivElement>();
 
 const showKillIndex = ref<number | null>(null);
 const preventDisappear = ref(false);
 const curTimeout = ref<any>(null);
-const showMs = ref(false);
-const clip = ref<number[]>([400, 900]);
-const listening = ref<boolean>(false);
-
-// @ts-ignore
-watch(showMs, (val) => localStorage.setItem("showMs", val));
+const clip = ref<number[]>([0, 0]);
 
 const seekVideo = (time: number) => {
 	const video = document.getElementById("video") as HTMLVideoElement;
@@ -104,17 +102,25 @@ const dragKeypoint = (
 	const video = document.getElementById("video") as HTMLVideoElement;
 	if (idx === 0) {
 		const leftPlacement = resolveBounds(initLeft + movePercent, 0, initLeft + spaceWidth);
-		clipDiv.value!.style.width = `${resolveBounds(initWidth - movePercent, 0, initLeft + initWidth)}%`;
+		const widthPlacement = resolveBounds(initWidth - movePercent, 0, initLeft + initWidth)
+		clipDiv.value!.style.width = `${widthPlacement}%`;
 		clipDiv.value!.style.left = `${leftPlacement}%`;
 		video.currentTime = leftPlacement * props.metadata.meta.format.duration / 100;
+		clip.value[0] = leftPlacement * props.metadata.meta.format.duration / 100
 	} else if (idx === 1) {
 		const widthPlacement = resolveBounds(initWidth + movePercent, 0, 100 - initLeft)
 		clipDiv.value!.style.width = `${widthPlacement}%`;
 		video.currentTime = (initLeft + widthPlacement) * props.metadata.meta.format.duration / 100;
+		clip.value[1] = (initLeft + widthPlacement) * props.metadata.meta.format.duration / 100;
 	} else if (idx === -1) {
 		const leftPlacement = resolveBounds(initLeft + movePercent, 0, 100 - initWidth)
 		clipDiv.value!.style.left = `${leftPlacement}%`;
 		video.currentTime = leftPlacement * props.metadata.meta.format.duration / 100;
+		
+		clip.value = [
+			leftPlacement * props.metadata.meta.format.duration / 100,
+			(leftPlacement + initWidth) * props.metadata.meta.format.duration / 100
+		]
 	}
 };
 
@@ -165,18 +171,27 @@ const filteredKills = computed(() => {
 	return retKills;
 });
 
-const addClip = () => {
-	const video = document.getElementById("video") as HTMLVideoElement;
-	clip.value = [video.currentTime, video.currentTime + 15];
+const manageClip = () => {
+	if (clip.value[1] - clip.value[0] != 0) {
+		clip.value = [0, 0];
+	} else {
+		const video = document.getElementById("video") as HTMLVideoElement;
+		clip.value = [video.currentTime, video.currentTime + 15];
+	}
 };
 
 onMounted(() => {
 	const video = document.getElementById("video") as HTMLVideoElement;
 
 	video.addEventListener("timeupdate", () => {
+		if (Math.floor(video.currentTime) === Math.floor(clip.value[1])) {
+			video.currentTime = clip.value[0];
+		}
+
 		const progress = (video.currentTime / video.duration) * 100;
 		const progressBar = document.querySelector(".progress") as HTMLElement;
 		progressBar.style.background = `linear-gradient(to right, #c0c0c0 ${progress}%, #e9e9e9 ${progress}%)`;
+		peg.value!.style.left = `${progress}%`;
 	});
 });
 </script>
@@ -221,6 +236,14 @@ onMounted(() => {
 	user-select: none;
 }
 
+.peg {
+	position: absolute;
+	width: 1px;
+	height: 120%;
+	transform: translate(0px, -10%);
+	background-color: indianred;
+}
+
 .dragpoint {
 	width: 7px;
 	height: 110%;
@@ -228,21 +251,18 @@ onMounted(() => {
 	box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
 	cursor: e-resize;
 	flex-shrink: 0;
-}
-
-.dragpoint:active {
-	cursor: e-resize;
+	content: "";
+	transform: translate(0px, -5%);
+	display: block;
 }
 
 .start {
 	border-top-left-radius: 5px;
 	border-bottom-left-radius: 5px;
-	transform: translate(-7px, -5%);
 }
 .end {
 	border-top-right-radius: 5px;
 	border-bottom-right-radius: 5px;
-	transform: translate(7px, -5%);
 }
 
 .timeline {
