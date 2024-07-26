@@ -95,7 +95,14 @@ const curTimeout = ref<any>(null);
 const clip = ref<number[]>([0, 0]);
 const dragging = ref<boolean>(false);
 const saveDirectory = ref("");
-const saveName = ref("");
+
+const saveName = ref(
+	new Date()
+		.toLocaleString("hi-in", { hour12: false })
+		.replace(",", " -")
+		.replace(/\//g, "-")
+		.replace(/:/g, "-")
+);
 
 const seekVideo = (time: number) => {
 	const video = document.getElementById("video") as HTMLVideoElement;
